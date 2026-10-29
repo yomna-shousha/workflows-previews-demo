@@ -56,7 +56,7 @@ export class ProcessJob extends WorkflowEntrypoint<Env, JobParams> {
     await step.do("complete job", () =>
       this.env.JOBS.getByName(event.payload.jobId).complete(event.payload.jobId, ranBy),
     );
-    return { jobId: event.payload.jobId, createdBy: event.payload.createdBy, ranBy };
+    return { jobId: event.payload.jobId, createdBy: event.payload.createdBy, ranBy, codeVersion: "test-branch-2" };
   }
 }
 
