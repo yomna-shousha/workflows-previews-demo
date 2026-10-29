@@ -28,6 +28,8 @@ You don't edit `wrangler.jsonc` per PR. The script reads it and writes two confi
 3. Deploy production once (`npx wrangler deploy`). A Preview needs the main Worker to exist.
 4. Open a pull request.
 
+If your `workers.dev` URLs are behind Cloudflare Access, create an Access service token and add a **Service Auth** policy for it to that Access application. Then add `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` as repository secrets so the smoke test can reach the Preview.
+
 Locally: `npm run preview:deploy -- --name my-branch` and `npm run preview:delete -- --name my-branch`.
 
 ## Things to know

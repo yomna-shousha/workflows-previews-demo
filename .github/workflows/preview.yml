@@ -35,6 +35,10 @@ jobs:
         run: npm run preview:deploy
 
       - name: Smoke test
+        env:
+          # Only needed if workers.dev is behind Cloudflare Access.
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: npm run smoke -- "${{ steps.preview.outputs.url }}" "preview:${PREVIEW_NAME}"
 
       - name: Comment on pull request

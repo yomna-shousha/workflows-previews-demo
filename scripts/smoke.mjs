@@ -14,8 +14,15 @@ if (!url || !expected) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Optional, for URLs behind Cloudflare Access: `cloudflared access token -app=<url>`.
-const headers = process.env.CF_ACCESS_TOKEN ? { "cf-access-token": process.env.CF_ACCESS_TOKEN } : {};
+// Optional, for URLs behind Cloudflare Access: a service token (CI), or a user token from
+// `cloudflared access token -app=<url>` (local).
+const headers = {
+  ...(process.env.CF_ACCESS_CLIENT_ID && {
+    "cf-access-client-id": process.env.CF_ACCESS_CLIENT_ID,
+    "cf-access-client-secret": process.env.CF_ACCESS_CLIENT_SECRET,
+  }),
+  ...(process.env.CF_ACCESS_TOKEN && { "cf-access-token": process.env.CF_ACCESS_TOKEN }),
+};
 
 async function request(path, init) {
   // A new Preview can take a few seconds to start serving.
