@@ -174,21 +174,37 @@ function deploy(p, previewName) {
   }
 }
 
-function remove(p, previewName) {
+// `wrangler delete` also lists KV namespaces, which a token with only Workers Scripts: Edit
+// cannot do. The API call needs nothing more.
+async function deleteWorker(name) {
+  const { CLOUDFLARE_API_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: account } = process.env;
+  if (!token || !account) {
+    const r = wrangler(["delete", "--name", name, "--force"], { capture: true });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+  console.log(`$ DELETE /accounts/<account>/workers/scripts/${name}?force=true`);
+  const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/${name}?force=true`,
+      { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+  const body = await res.text();
+  if (!res.ok) console.error(body);
+  return { status: res.ok ? 0 : res.status, stdout: body, stderr: "" };
+}
+
+async function remove(p, previewName) {
   const failures = [];
-  const attempt = (args, what) => {
-    const r = wrangler(args, { capture: true });
+  const settle = (r, what) => {
     if (r.status === 0) return;
     if (isMissing(r)) return console.warn(`${what}: already gone`);
     failures.push(`${what} (exit ${r.status})`);
   };
   // Dependents first: the Preview binds to the companion.
-  attempt(["preview", "delete", "-c", PREVIEW_CONFIG, "--name", previewName, "-y"],
-      `Preview ${previewName}`);
+  settle(wrangler(["preview", "delete", "-c", PREVIEW_CONFIG, "--name", previewName, "-y"],
+      { capture: true }), `Preview ${previewName}`);
   for (const wf of p.companionWorkflows) {
-    attempt(["workflows", "delete", wf.name], `Workflow ${wf.name}`);
+    settle(wrangler(["workflows", "delete", wf.name], { capture: true }), `Workflow ${wf.name}`);
   }
-  attempt(["delete", "--name", p.companionName, "--force"], `Worker ${p.companionName}`);
+  settle(await deleteWorker(p.companionName), `Worker ${p.companionName}`);
   if (failures.length) throw new Error(`cleanup failed: ${failures.join(", ")}`);
 }
 
@@ -197,7 +213,7 @@ try {
   const p = plan(readConfig(), previewName);
   writeConfigs(p);
   if (command === "deploy") deploy(p, previewName);
-  else if (command === "delete") remove(p, previewName);
+  else if (command === "delete") await remove(p, previewName);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
