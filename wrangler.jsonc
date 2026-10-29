@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "workflows-previews-demo",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "vars": { "DEPLOYMENT": "production" },
+  "durable_objects": {
+    "bindings": [{ "name": "JOBS", "class_name": "JobStore" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["JobStore"] }],
+  "workflows": [
+    {
+      "binding": "PROCESS_JOB",
+      "name": "workflows-previews-demo",
+      "class_name": "ProcessJob"
+    }
+  ],
+  // scripts/preview.mjs fills in `previews.workflows` and `previews.durable_objects` per
+  // Preview. Everything else here is used as-is.
+  "previews": {
+    "vars": { "DEPLOYMENT": "preview" }
+  }
+}
